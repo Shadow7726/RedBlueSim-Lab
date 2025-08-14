@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎣 Spot the Phish – Expo Game</title>
+  <style>
+    :root {
+      --bg:#0f1220; --panel:#161a2b; --accent:#5eead4; --muted:#9aa3b2; --text:#e6e9ef; --bad:#ff6b6b; --good:#7ee787; --warn:#facc15;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";background:linear-gradient(135deg,#0b0e1a,#14182a 40%,#0b0e1a);color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+    .brand{display:flex;gap:12px;align-items:center}
+    .brand .logo{width:42px;height:42px;border-radius:12px;background:radial-gradient(circle at 30% 30%,var(--accent),#2dd4bf 30%,transparent 31%),linear-gradient(135deg,#0ea5e9,transparent 60%);box-shadow:0 0 0 2px #0b0e1a inset,0 10px 30px rgba(0,0,0,.35)}
+    .brand h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.2px}
+    .hud{display:flex;gap:10px;align-items:center}
+    .pill{padding:8px 12px;border:1px solid #2b314d;background:#0e1222;border-radius:999px;font-size:13px;color:var(--muted)}
+    .pill strong{color:var(--text)}
+
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.0));border:1px solid #28304a;border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .stack{display:grid;gap:16px}
+
+    .screen{display:none}
+    .screen.active{display:block}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+    .email{background:#0e1324;border:1px solid #28304a;border-radius:16px;padding:16px}
+    .email .hdr{display:grid;gap:6px;margin-bottom:12px}
+    .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+    .val{font-size:15px}
+    .subject{font-size:18px;font-weight:700}
+    .body{background:#0b0f1f;border:1px dashed #293151;border-radius:12px;padding:12px;white-space:pre-wrap;line-height:1.45}
+
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    button{appearance:none;border:none;padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer;transition:transform .06s ease, box-shadow .2s ease}
+    button:active{transform:translateY(1px)}
+    .primary{background:linear-gradient(180deg,#10b981,#059669);color:#06201a;box-shadow:0 6px 20px rgba(16,185,129,.35)}
+    .danger{background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 6px 20px rgba(239,68,68,.35)}
+    .ghost{background:#0e1222;color:var(--text);border:1px solid #2b314d}
+
+    .clues{border-left:3px solid var(--warn);padding:10px 12px;margin-top:12px;background:#151a2d;border-radius:10px}
+    .clues .label{color:#fde68a}
+
+    .leader{background:#0f1428;border:1px solid #2b3353;border-radius:16px;padding:14px}
+    .leader table{width:100%;border-collapse:collapse;font-size:14px}
+    .leader th,.leader td{padding:8px;border-bottom:1px solid #222a44;text-align:left}
+    .leader th{color:var(--muted);font-weight:600}
+    .rank{font-feature-settings:"tnum" on;}
+
+    .footer{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><div class="logo"></div><h1>Spot the Phish – Intermediate</h1></div>
+      <div class="hud">
+        <div class="pill" id="hud-player">Player: <strong>-</strong></div>
+        <div class="pill">Score: <strong id="hud-score">0</strong></div>
+        <div class="pill">Time: <strong id="hud-time">00:00</strong></div>
+        <div class="pill">Round: <strong id="hud-round">0/10</strong></div>
+      </div>
+    </header>
+
+    <!-- START SCREEN -->
+    <section id="screen-start" class="screen active">
+      <div class="grid">
+        <div class="card stack">
+          <h2 style="margin:0">Welcome</h2>
+          <p style="margin:0;color:var(--muted)">Identify whether each email is <strong>Phish</strong> or <strong>Legit</strong>. You have a countdown timer; scoring is <strong>+1</strong> for correct, <strong>-1</strong> for wrong. This set contains <strong>10 phishing emails</strong> (intermediate difficulty) with realistic wording and domains.</p>
+          <div class="stack card" style="background:#0f1428">
+            <label class="label" for="player">Player name</label>
+            <input id="player" placeholder="Enter your name" style="width:100%;padding:12px;border-radius:12px;border:1px solid #2b314d;background:#0b0f1f;color:var(--text)" />
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <label class="label">Timer</label>
+              <button class="ghost" data-time="60">60s</button>
+              <button class="ghost" data-time="90">90s</button>
+              <button class="ghost" data-time="75">75s</button>
+              <input id="customTime" type="number" min="30" max="300" step="5" placeholder="Custom (s)" style="width:140px;padding:10px;border-radius:10px;border:1px solid #2b314d;background:#0b0f1f;color:var(--text)" />
+            </div>
+            <button id="btn-start" class="primary" style="width:fit-content">Start Game</button>
+          </div>
+          <div class="footer">Runs offline · Leaderboard is stored locally on this device</div>
+        </div>
+        <div class="leader">
+          <h3 style="margin:0 0 8px 0">🏆 Leaderboard</h3>
+          <table id="lb-table">
+            <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Time</th><th>Date</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btn-clear" class="ghost">Clear Leaderboard</button>
+            <button id="btn-export" class="ghost">Export</button>
+            <input id="importFile" class="hidden" type="file" accept="application/json" />
+            <button id="btn-import" class="ghost">Import</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="screen-game" class="screen">
+      <div class="grid">
+        <div class="card stack">
+          <div class="email">
+            <div class="hdr">
+              <div class="label">Subject</div>
+              <div id="subject" class="subject">–</div>
+              <div class="label">From</div>
+              <div id="from" class="val">–</div>
+            </div>
+            <div id="body" class="body">–</div>
+            <div id="clues" class="clues hidden">
+              <div class="label">Clues</div>
+              <ul id="clueList" style="margin:8px 0 0 16px"></ul>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="btn-phish" class="danger">Mark as PHISH</button>
+            <button id="btn-legit" class="primary">Mark as LEGIT</button>
+            <button id="btn-next" class="ghost" disabled>Next</button>
+          </div>
+        </div>
+        <div class="leader">
+          <h3 style="margin:0 0 8px 0">Top Signs of Phishing</h3>
+          <ul style="margin:0 0 8px 18px;line-height:1.5">
+            <li>Urgent pressure or threats ("account locked", "pay now").</li>
+            <li>Sender domain look‑alikes (micr0soft.com, support‑fedex.com).</li>
+            <li>Odd links/attachments (shorteners, .zip/.html login pages).</li>
+            <li>Requests for passwords, MFA codes, or payments.</li>
+            <li>Grammar/formatting inconsistencies or mismatched branding.</li>
+          </ul>
+          <h4 style="margin:8px 0 4px 0">Progress</h4>
+          <div class="pill">Correct: <strong id="stat-correct">0</strong> · Wrong: <strong id="stat-wrong">0</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- END SCREEN -->
+    <section id="screen-end" class="screen">
+      <div class="card stack">
+        <h2 style="margin:0">Round Complete</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="pill">Player: <strong id="end-player">–</strong></div>
+          <div class="pill">Score: <strong id="end-score">0</strong></div>
+          <div class="pill">Correct: <strong id="end-correct">0</strong></div>
+          <div class="pill">Wrong: <strong id="end-wrong">0</strong></div>
+          <div class="pill">Time Mode: <strong id="end-time">–</strong></div>
+        </div>
+        <div id="review" class="stack"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+          <button id="btn-restart" class="primary">Play Again</button>
+          <button id="btn-home" class="ghost">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">© Spot the Phish – Works offline. No data leaves this device.</div>
+  </div>
+
+  <audio id="sfx-correct"><source src="data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBHGZmZmZm" type="audio/wav"></audio>
+  <audio id="sfx-wrong"><source src="data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBHFmZmZmZ" type="audio/wav"></audio>
+  <audio id="sfx-tick"><source src="data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBHFmZmZmZ" type="audio/wav"></audio>
+
+  <script>
+    // ---- Game Data: 10 phishing emails (intermediate) ----
+    const EMAILS = [
+      { subject: "URGENT: Your account is locked!", from: "security@chase-bnk.com", body: "We detected unusual activity. Verify now to avoid closure: http://bit.ly/secure-bank", clues:["Misspelled domain (chase-bnk.com)", "Urgent scare language", "Shortened tracking link"], isPhish:true },
+      { subject: "Your package is held at customs", from: "delivery@fedex-support.com", body: "A small customs fee of $2.50 is required to release your parcel: http://delivery-support.link", clues:["Unofficial domain (fedex-support.com)", "Unexpected payment request", "Non‑FedEx link"], isPhish:true },
+      { subject: "Action Required: MFA reset confirmation", from: "it-helpdesk@yourc0mpany.com", body: "We are resetting MFA globally. Keep access by confirming here: https://yourcompany-secure-login.page.link/mfa", clues:["Look‑alike internal domain (yourc0mpany)", "Unusual global reset notice", "Link uses app short domain (page.link)"], isPhish:true },
+      { subject: "Shared invoice awaiting your review", from: "billing@onetrive-support.com", body: "A file has been shared with you: Invoice_Q3.html. Sign in to view.", clues:["Typosquatting (onetrive)", ".html attachment for login", "Generic sender"], isPhish:true },
+      { subject: "Payroll change approved – confirm banking details", from: "hr-payroll@secure‑workday.com", body: "Your salary account was changed. If this wasn't you, login now to revert:", clues:["External domain pretending to be HR platform", "Creates panic around salary", "No ticket reference"], isPhish:true },
+      { subject: "Teams meeting invitation updated", from: "notifications@micr0soft-team.com", body: "Organizer changed the meeting link. Join via: http://ms-teams.meet-secure.net", clues:["Zero instead of 'o' in Microsoft", "Non‑Microsoft join URL", "Unexpected update"], isPhish:true },
+      { subject: "Storage quota exceeded – reauthenticate", from: "drive@ggogle-support.com", body: "You reached 99% quota. Re‑authenticate to continue syncing.", clues:["Misspelled brand (ggogle)", "Vague call to re‑authenticate", "No direct path via product UI"], isPhish:true },
+      { subject: "Security alert: new sign‑in from Russia", from: "alerts@secure-microsoft.com", body: "If this was not you, verify immediately: http://account‑secure‑verify.com", clues:["Non‑Microsoft domain despite branding", "Fear/urgency social engineering", "Plain‑HTTP look‑alike"], isPhish:true },
+      { subject: "DocuSign: Please review and sign — Contract #7421", from: "notify@docuslgn.net", body: "You have a document waiting. Access here: https://docuslgn.net/sign-in", clues:["Swap of 'i' with 'l' (docuslgn)", "Third‑party domain", "Link points off official site"], isPhish:true },
+      { subject: "Crypto Airdrop Reward – Claim in 1 hour", from: "rewards@coinbase‑airdrop.io", body: "Your wallet qualifies! Connect wallet and sign to claim.", clues:["Coinbase brand misuse", "'Connect wallet' request via unknown domain", "Artificial time pressure"], isPhish:true },
+    ];
+
+    // ---- State ----
+    let state = {
+      player:"-", timeLimit:60, timeLeft:60, score:0, index:0, order:[],
+      correct:0, wrong:0, answers:[], running:false, timerId:null
+    };
+
+    // ---- Utils ----
+    const $ = sel => document.querySelector(sel);
+    const fmt = s => String(s).padStart(2,'0');
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+    function nowStr(){ const d=new Date(); return d.toLocaleDateString()+" "+d.toLocaleTimeString(); }
+
+    // ---- Leaderboard ----
+    const LB_KEY = 'spotphish_lb_v1';
+    function getLB(){ try{ return JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch{ return []; } }
+    function setLB(data){ localStorage.setItem(LB_KEY, JSON.stringify(data)); }
+    function addLB(entry){ const lb=getLB(); lb.push(entry); lb.sort((a,b)=>b.score-a.score||a.time-b.time); setLB(lb.slice(0,20)); renderLB(); }
+    function renderLB(){ const tbody = $("#lb-table tbody"); tbody.innerHTML=''; getLB().forEach((r,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td class="rank">${i+1}</td><td>${r.player}</td><td>${r.score}</td><td>${r.time}s</td><td>${r.date}</td>`; tbody.appendChild(tr); }); }
+
+    // ---- Screens ----
+    function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+
+    // ---- Game Flow ----
+    function startGame(){
+      state.player = $('#player').value.trim() || 'Guest';
+      const custom = parseInt($('#customTime').value,10);
+      if(!isNaN(custom) && custom>=30 && custom<=300){ state.timeLimit = custom; }
+      $('#hud-player strong').textContent = state.player;
+      state.timeLeft = state.timeLimit; state.score = 0; state.index = 0; state.correct=0; state.wrong=0; state.answers=[]; state.running=true;
+      $('#hud-score').textContent = '0'; $('#hud-time').textContent = `${fmt(Math.floor(state.timeLeft/60))}:${fmt(state.timeLeft%60)}`; $('#hud-round').textContent = `0/${EMAILS.length}`;
+      $('#stat-correct').textContent = '0'; $('#stat-wrong').textContent = '0';
+      state.order = shuffle([...EMAILS.keys()]);
+      show('#screen-game');
+      nextEmail();
+      state.timerId = setInterval(tick, 1000);
+    }
+
+    function tick(){
+      if(!state.running) return; state.timeLeft--; $('#hud-time').textContent = `${fmt(Math.floor(state.timeLeft/60))}:${fmt(state.timeLeft%60)}`;
+      if(state.timeLeft<=0){ finish(); }
+    }
+
+    function current(){ return EMAILS[state.order[state.index]]; }
+
+    function nextEmail(){
+      if(state.index>=EMAILS.length){ finish(); return; }
+      const e = current();
+      $('#subject').textContent = e.subject; $('#from').textContent = e.from; $('#body').textContent = e.body;
+      $('#clues').classList.add('hidden'); $('#clueList').innerHTML='';
+      $('#btn-next').disabled = true; $('#btn-phish').disabled=false; $('#btn-legit').disabled=false;
+      $('#hud-round').textContent = `${state.index+1}/${EMAILS.length}`;
+    }
+
+    function answer(isPhishSelected){
+      if(!state.running) return;
+      const e = current();
+      const correct = (isPhishSelected === e.isPhish);
+      state.score += correct? 1 : -1;
+      correct ? state.correct++ : state.wrong++;
+      $('#hud-score').textContent = state.score;
+      $('#stat-correct').textContent = state.correct; $('#stat-wrong').textContent = state.wrong;
+      // Reveal clues
+      $('#clues').classList.remove('hidden');
+      const ul = $('#clueList'); ul.innerHTML=''; e.clues.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; ul.appendChild(li); });
+      $('#btn-next').disabled = false; $('#btn-phish').disabled=true; $('#btn-legit').disabled=true;
+      state.answers.push({idx:state.order[state.index], selected:isPhishSelected, correct});
+    }
+
+    function next(){ state.index++; nextEmail(); }
+
+    function finish(){
+      state.running=false; clearInterval(state.timerId); $('#end-player').textContent = state.player; $('#end-score').textContent = state.score; $('#end-correct').textContent = state.correct; $('#end-wrong').textContent = state.wrong; $('#end-time').textContent = state.timeLimit+'s';
+      // Save to leaderboard
+      addLB({player:state.player, score:state.score, time:state.timeLimit, date: nowStr()});
+      // Build review
+      const review = $('#review'); review.innerHTML='';
+      state.answers.forEach((a,i)=>{
+        const e = EMAILS[a.idx];
+        const div=document.createElement('div'); div.className='email';
+        div.innerHTML = `<div class="hdr"><div class="label">${a.correct? '✅ Correct' : '❌ Wrong'}</div><div class="subject">${i+1}. ${e.subject}</div><div class="label">From</div><div class="val">${e.from}</div></div><div class="body">${e.body}</div>`;
+        const clues=document.createElement('div'); clues.className='clues'; clues.innerHTML='<div class="label">Clues</div>';
+        const ul=document.createElement('ul'); ul.style.margin='8px 0 0 16px'; e.clues.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; ul.appendChild(li); }); clues.appendChild(ul); div.appendChild(clues);
+        review.appendChild(div);
+      });
+      show('#screen-end');
+    }
+
+    // ---- Events ----
+    document.addEventListener('click', (e)=>{
+      const t = e.target;
+      if(t.matches('#btn-start')) startGame();
+      if(t.matches('button[data-time]')){ state.timeLimit = parseInt(t.getAttribute('data-time'),10); document.querySelectorAll('button[data-time]').forEach(b=>b.classList.remove('primary')); t.classList.add('primary'); }
+      if(t.matches('#btn-phish')) answer(true);
+      if(t.matches('#btn-legit')) answer(false);
+      if(t.matches('#btn-next')) next();
+      if(t.matches('#btn-restart')){ show('#screen-start'); }
+      if(t.matches('#btn-home')){ show('#screen-start'); }
+      if(t.matches('#btn-clear')){ if(confirm('Clear local leaderboard?')){ setLB([]); renderLB(); } }
+      if(t.matches('#btn-export')){
+        const blob = new Blob([JSON.stringify(getLB(),null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='spot-the-phish-leaderboard.json'; a.click(); URL.revokeObjectURL(url);
+      }
+      if(t.matches('#btn-import')){ $('#importFile').click(); }
+    });
+
+    $('#importFile').addEventListener('change', (e)=>{
+      const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(Array.isArray(data)){ setLB(data); renderLB(); alert('Imported!'); } }catch{ alert('Invalid file.'); } }; reader.readAsText(file);
+    });
+
+    // Init
+    renderLB();
+  </script>
+</body>
+</html>
