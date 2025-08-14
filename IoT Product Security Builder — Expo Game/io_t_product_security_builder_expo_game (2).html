@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IoT Product Security Builder — Expo Game</title>
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8;
+      --good:#10b981; --bad:#ef4444; --glass:rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071022 0%, #071827 60%);color:#e6eef8}
+    .container{max-width:1100px;margin:28px auto;padding:18px}
+    .header{display:flex;align-items:center;gap:16px}
+    .logo{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
+    h1{margin:0;font-size:20px}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    .card{background:var(--card);border-radius:14px;padding:18px;margin-top:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6);}
+
+    /* layout */
+    .split{display:grid;grid-template-columns: 48% 52%;gap:18px}
+    .left{min-height:520px}
+    .right{min-height:520px}
+
+    /* Device preview */
+    .device-stage{height:360px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:12px;position:relative;overflow:hidden}
+    .device{width:320px;height:220px;border-radius:12px;background:linear-gradient(180deg,#07172a,#092435);position:absolute;left:40px;top:60px;border:2px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.7);}
+    .device .label{position:absolute;left:14px;top:12px;font-size:12px;color:var(--muted)}
+    .part{position:absolute;transition:all 600ms cubic-bezier(.2,.9,.2,1);opacity:0}
+
+    /* parts */
+    .part.pcb{width:220px;height:110px;background:#04202a;border-radius:6px;left:50px;top:80px;box-shadow:inset 0 2px 0 rgba(255,255,255,0.02)}
+    .part.hsm{width:48px;height:30px;background:linear-gradient(180deg,#0f1724,#071827);border-radius:4px;left:72px;top:96px;border:1px solid rgba(255,255,255,0.03)}
+    .part.sensor{width:36px;height:36px;border-radius:50%;background:linear-gradient(180deg,#0b1220,#071827);left:210px;top:150px;border:1px solid rgba(255,255,255,0.03)}
+    .part.wifi{width:24px;height:18px;border-radius:3px;background:linear-gradient(180deg,#052f3a,#092433);left:228px;top:92px}
+    .part.debug{width:80px;height:10px;background:linear-gradient(90deg,#2b2f3b,#1f2430);left:46px;top:204px;border-radius:6px}
+
+    .part.visible{opacity:1;transform:translateY(0) scale(1)}
+    .part.hidden{opacity:0;transform:translateY(20px) scale(.98)}
+
+    .question-area{padding:14px}
+    .question{font-size:18px;margin-bottom:8px}
+    .options{display:flex;gap:10px;flex-wrap:wrap}
+    /* removed green/red hint borders from options per request */
+    .opt{background:var(--glass);padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);min-width:140px}
+    .opt:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(2,6,23,0.6)}
+
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .btn{padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,var(--accent),#7c3aed);border:none;color:#021018;cursor:pointer;font-weight:600}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+    /* score */
+    .scoreboard{display:flex;gap:12px;align-items:center}
+    .meter{width:140px;height:140px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--good) 0deg, #0b1220 0deg);position:relative}
+    .meter .num{position:absolute;font-size:22px;font-weight:700}
+
+    /* results */
+    .list{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);padding:12px;border-radius:10px;max-height:220px;overflow:auto}
+    .vuln{display:flex;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px}
+    .vuln.good{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.06)}
+    .vuln.bad{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.06)}
+
+    /* scoreboard modal */
+    .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:grid;place-items:center;background:rgba(2,6,23,0.6);z-index:60;display:none}
+    .modal .box{width:520px;background:linear-gradient(180deg,#081423,#051025);padding:18px;border-radius:12px}
+    .score-table{width:100%;border-collapse:collapse}
+    .score-table th,.score-table td{padding:8px;text-align:left;border-bottom:1px dashed rgba(255,255,255,0.03);font-size:13px}
+
+    /* responsive */
+    @media (max-width:980px){.split{grid-template-columns:1fr}.device{left:40%;transform:translateX(-40%)}.container{padding:10px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">IoT</div>
+      <div>
+        <h1>IoT Product Security Builder — Expo Game</h1>
+        <div class="subtitle">Answer 10 design questions. Build an IoT device visually, get a security score, learn vulnerabilities and controls.</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <button class="btn ghost" id="open-leader">Leaderboard</button>
+        <button class="btn" id="reset-game">New Game</button>
+      </div>
+    </div>
+
+    <div class="card split">
+      <div class="left card">
+        <div class="device-stage">
+          <div class="device" id="device">
+            <div class="label">Prototype Unit v1.0</div>
+            <div class="part pcb hidden" id="part-pcb"></div>
+            <div class="part hsm hidden" id="part-hsm" title="HSM / Secure Element"></div>
+            <div class="part sensor hidden" id="part-sensor" title="Sensor"></div>
+            <div class="part wifi hidden" id="part-wifi" title="Wi‑Fi Module"></div>
+            <div class="part debug hidden" id="part-debug" title="Debug Header"></div>
+            <!-- dynamic badges will be added here -->
+          </div>
+          <!-- animated labels -->
+          <div style="position:absolute;right:12px;top:12px;color:var(--muted);font-size:12px">Assembly Progress</div>
+          <div id="progressBar" style="position:absolute;right:12px;bottom:12px;width:200px;height:10px;background:rgba(255,255,255,0.03);border-radius:6px">
+            <div id="progressFill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#7c3aed);border-radius:6px"></div>
+          </div>
+        </div>
+
+        <div class="question-area">
+
+          <div class="question" id="questionText">Welcome to the IoT Product Security Builder! Click 'Start' to begin.</div>
+          <div class="options" id="options"></div>
+
+          <div class="controls">
+            <div style="display:flex;gap:10px">
+              <button class="btn" id="startBtn">Start</button>
+              <button class="btn ghost" id="explainBtn">Show Scoring Rules</button>
+            </div>
+            <div class="subtitle" id="qcount">Question 0 / 10</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px;color:var(--muted)">Security Score</div>
+            <div class="scoreboard" style="margin-top:6px">
+              <div class="meter" id="meter" aria-hidden="true"><div class="num" id="meterNum">0%</div></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:16px">Summary</div>
+                <div class="subtitle" id="summaryText">No answers yet. Build your device and learn about the security impact of each decision.</div>
+                <div style="margin-top:8px"><button class="btn ghost" id="finalizeBtn">Finish Early</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Implemented Controls</div>
+            <div class="list" id="controlsList"></div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Introduced Vulnerabilities</div>
+            <div class="list" id="vulnsList"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+          <input id="playerName" placeholder="Enter your name to save score" style="flex:1;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)" />
+          <button class="btn" id="saveScore">Save Score</button>
+        </div>
+
+        <!-- AI-driven build preview -->
+        <div style="margin-top:14px;border-top:1px dashed rgba(255,255,255,0.03);padding-top:12px">
+          <div style="font-weight:700">Device Preview</div>
+          <div class="subtitle" style="font-size:13px;margin-top:6px">Live device build — updates as you choose components.</div>
+          <div id="componentList" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"></div>
+          <div id="buildDescription" style="margin-top:10px;color:var(--muted);font-size:13px">No build yet. Answer questions to construct your device.</div>
+          <div id="buildLog" style="margin-top:10px;color:var(--muted);font-size:13px;max-height:120px;overflow:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">How it works</div>
+        <div class="subtitle">Each option affects score and whether parts appear on the device. Hover options to see the security impact.</div>
+      </div>
+      <div style="margin-top:12px;color:var(--muted);font-size:14px">This interactive builder simulates trade-offs during IoT product design. It's educational — not a replacement for a professional security review. Use the scoreboard and leaderboard at the expo to compare results.</div>
+    </div>
+  </div>
+
+  <!-- Leaderboard modal -->
+  <div class="modal" id="leaderModal">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700">Leaderboard</div>
+        <div><button class="btn ghost" id="closeLeader">Close</button></div>
+      </div>
+      <table class="score-table" id="leaderTable">
+        <thead><tr><th>Player</th><th>Score</th><th>Date</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Questions definition updated: each question now has 5 options. Removed color hints from options.
+    const QUESTIONS = [
+      {
+        id: 'boot', text: 'Boot process: How is the device boot protected?',
+        options: [
+          {key:'secureboot', text:'Secure Boot + signed firmware', points:10, impactParts:['pcb','hsm'], controls:['Secure Boot','Firmware signature verification'], vulns:[], secure:true},
+          {key:'secureboot_no_hsm', text:'Secure Boot but keys in flash (no HSM)', points:6, impactParts:['pcb'], controls:['Secure Boot'], vulns:['Signing keys stored in flash (extractable)'], secure:false},
+          {key:'secure_remote', text:'Secure Boot with remote key provisioning (KMS)', points:8, impactParts:['pcb','hsm'], controls:['Secure Boot','Remote key management'], vulns:[], secure:true},
+          {key:'legacy_bios', text:'Legacy bootloader with limited protections', points:2, impactParts:['pcb'], controls:[], vulns:['Weak boot integrity'], secure:false},
+          {key:'nosboot', text:'No secure boot, firmware loads freely', points:0, impactParts:['pcb','debug'], controls:[], vulns:['Unauthenticated firmware update','Boot integrity not validated'], secure:false}
+        ]
+      },
+      {
+        id: 'hsm', text: 'Secrets storage: Where are device keys and secrets stored?',
+        options:[
+          {key:'hsm_yes', text:'Hardware Secure Module (HSM / SE)', points:10, impactParts:['hsm'], controls:['Protected Key Storage (HSM)'], vulns:[], secure:true},
+          {key:'hsm_virtual', text:'Trusted execution environment (TEE)', points:8, impactParts:['pcb'], controls:['TEE-based key protection'], vulns:[], secure:true},
+          {key:'flash_enc', text:'Encrypted in Flash with software key', points:4, impactParts:['pcb'], controls:['Encrypted storage (software)'], vulns:['Software-based key protection easier to extract'], secure:false},
+          {key:'obfuscation', text:'Key obfuscation only (no real encryption)', points:1, impactParts:['pcb'], controls:[], vulns:['Obfuscation is reversible'], secure:false},
+          {key:'plain_flash', text:'Plaintext in flash', points:0, impactParts:['pcb','debug'], controls:[], vulns:['Plaintext keys in firmware (high risk)'], secure:false}
+        ]
+      },
+      {
+        id:'fwupd', text:'Firmware updates: How are OTA updates delivered?',
+        options:[
+          {key:'signed_ota', text:'Signed OTA + rollback protection', points:10, impactParts:['pcb'], controls:['Signed OTA','Rollback protection'], vulns:[], secure:true},
+          {key:'signed_no_rollback', text:'Signed OTA but no rollback protection', points:6, impactParts:['pcb'], controls:['Signed OTA'], vulns:['Rollback attacks possible'], secure:false},
+          {key:'encrypted_ota', text:'Encrypted OTA but unsigned', points:4, impactParts:['pcb'], controls:['Encrypted transfer'], vulns:['No signature — tampered image possible'], secure:false},
+          {key:'delta_updates', text:'Delta updates without signing per-chunk', points:2, impactParts:['pcb'], controls:[], vulns:['Partial tamper risks'], secure:false},
+          {key:'plain_ota', text:'Plain OTA (no signature or encryption)', points:0, impactParts:['pcb','debug'], controls:[], vulns:['Tampered firmware updates (remote compromise)'], secure:false}
+        ]
+      },
+      {
+        id:'debug', text:'Debug interfaces: What is the factory debug posture?',
+        options:[
+          {key:'debug_disabled', text:'Debug ports disabled in production', points:8, impactParts:[], controls:['Disabled debug in production'], vulns:[], secure:true},
+          {key:'debug_locked', text:'Debug ports present but locked with fuse', points:6, impactParts:['debug'], controls:['Locked debug (fuse/secure)'], vulns:[], secure:true},
+          {key:'debug_jtag_pwd', text:'Debug ports protected by password', points:4, impactParts:['debug'], controls:['Password-protected debug'], vulns:['Passwords can be bypassed with hardware attacks'], secure:false},
+          {key:'debug_service', text:'Debug ports available only in factory with access control', points:3, impactParts:['debug'], controls:['Factory access control'], vulns:['Factory process risk'], secure:false},
+          {key:'debug_open', text:'Debug ports enabled and accessible', points:0, impactParts:['debug'], controls:[], vulns:['JTAG/Serial accessible — local extraction/root access'], secure:false}
+        ]
+      },
+      {
+        id:'secrets', text:'Device secrets lifecycle: How are keys provisioned?',
+        options:[
+          {key:'provision_secure', text:'Secure factory provisioning with attestation', points:8, impactParts:[], controls:['Secure provisioning','Device attestation'], vulns:[], secure:true},
+          {key:'provision_remote', text:'On-field provisioning through secure channel with attestation', points:7, impactParts:[], controls:['Remote secure provisioning'], vulns:[], secure:true},
+          {key:'manual_key', text:'Manual key entry at field', points:4, impactParts:[], controls:['Manual provisioning record'], vulns:['Human errors, exposure during provisioning'], secure:false},
+          {key:'preloaded_model', text:'Preloaded model key per batch', points:2, impactParts:[], controls:[], vulns:['Batch keys compromise many devices'], secure:false},
+          {key:'shared_key', text:'All devices share same token', points:0, impactParts:['pcb'], controls:[], vulns:['Shared token across fleet — credential reuse risk'], secure:false}
+        ]
+      },
+      {
+        id:'network', text:'Network communication: Which transport security do you use?',
+        options:[
+          {key:'tls', text:'TLS + mutual auth (mTLS)', points:10, impactParts:['wifi'], controls:['mTLS','Strong cipher suites'], vulns:[], secure:true},
+          {key:'tls_server', text:'TLS (server auth) only', points:6, impactParts:['wifi'], controls:['TLS server authentication'], vulns:['Client impersonation risk without mTLS'], secure:false},
+          {key:'dtls', text:'DTLS for constrained devices', points:7, impactParts:['wifi'], controls:['DTLS support'], vulns:[], secure:true},
+          {key:'vpn', text:'Device-to-cloud via VPN edge', points:5, impactParts:['wifi'], controls:['VPN tunneling'], vulns:[], secure:false},
+          {key:'plain_mqtt', text:'Plain MQTT / unencrypted', points:0, impactParts:['wifi'], controls:[], vulns:['Network eavesdropping and injection'], secure:false}
+        ]
+      },
+      {
+        id:'auth', text:'Authentication: Device identity and access control?',
+        options:[
+          {key:'unique_device', text:'Unique device identity + rotating credentials', points:10, impactParts:[], controls:['Per-device identity','Short-lived credentials'], vulns:[], secure:true},
+          {key:'x509', text:'X.509 certificates per device', points:9, impactParts:[], controls:['Certificate-based auth'], vulns:[], secure:true},
+          {key:'static_psk', text:'Static pre-shared key per model', points:4, impactParts:[], controls:['PSK'], vulns:['If leaked, all devices of model compromised'], secure:false},
+          {key:'oauth', text:'OAuth-style token exchange with refresh', points:6, impactParts:[], controls:['Token lifecycle'], vulns:[], secure:false},
+          {key:'default_pwd', text:'Default credentials (unchanged)', points:0, impactParts:[], controls:[], vulns:['Default password brute-force / reuse'], secure:false}
+        ]
+      },
+      {
+        id:'logging', text:'Logging and telemetry: How do you handle logs?',
+        options:[
+          {key:'secure_logs', text:'Protected logs, minimal PII, signed', points:6, impactParts:[], controls:['Secure logging','PII minimization'], vulns:[], secure:true},
+          {key:'centralized', text:'Centralized logs with access control', points:5, impactParts:[], controls:['Centralized logging'], vulns:[], secure:false},
+          {key:'verbose', text:'Verbose logging including PII', points:2, impactParts:[], controls:[], vulns:['PII leakage','exfiltration risk'], secure:false},
+          {key:'local_only', text:'Local logs kept only on device', points:3, impactParts:[], controls:['Local retention'], vulns:['No central visibility for incidents'], secure:false},
+          {key:'no_logs', text:'No logs at all', points:0, impactParts:[], controls:[], vulns:['No visibility for incident response'], secure:false}
+        ]
+      },
+      {
+        id:'supply', text:'Supply chain: Component sourcing model?',
+        options:[
+          {key:'vetted', text:'Vetted suppliers + HW attestation', points:6, impactParts:[], controls:['Supply chain verification','Hardware attestation'], vulns:[], secure:true},
+          {key:'certified', text:'Certified suppliers & component traceability', points:5, impactParts:[], controls:['Traceability'], vulns:[], secure:true},
+          {key:'mix', text:'Mixed suppliers (some vetting)', points:3, impactParts:[], controls:[], vulns:['Potential compromised components'], secure:false},
+          {key:'market_parts', text:'Off-the-shelf market parts with inspection', points:2, impactParts:[], controls:[], vulns:['Unknown provenance risk'], secure:false},
+          {key:'cheapest', text:'Cheapest available parts with no vetting', points:0, impactParts:[], controls:[], vulns:['Backdoored components risk'], secure:false}
+        ]
+      },
+      {
+        id:'runtime', text:'Runtime protections: Memory and process hardening?',
+        options:[
+          {key:'aslr_stackprotector', text:'ASLR, NX, Stack protector, least privilege', points:10, impactParts:[], controls:['ASLR','NX bit','Stack Canaries','Least privilege'], vulns:[], secure:true},
+          {key:'aslr_only', text:'ASLR only', points:4, impactParts:[], controls:['ASLR'], vulns:['Only partial mitigation'], secure:false},
+          {key:'seccomp', text:'Seccomp/sandboxing for processes', points:6, impactParts:[], controls:['Process sandboxing'], vulns:[], secure:true},
+          {key:'partial', text:'Some protections enabled (ASLR only)', points:4, impactParts:[], controls:['Partial runtime hardening'], vulns:['Partial mitigation only'], secure:false},
+          {key:'none', text:'No runtime hardening', points:0, impactParts:[], controls:[], vulns:['Memory corruption more likely to succeed'], secure:false}
+        ]
+      }
+    ];
+
+    // state
+    let state = {
+      idx: -1,
+      answers: [],
+      points:0,
+      maxPoints: QUESTIONS.reduce((s,q)=>s+Math.max(...q.options.map(o=>o.points)),0),
+      controls:new Set(),
+      vulns:new Set()
+    };
+
+    function resetState(){
+      state = {idx:-1,answers:[],points:0,maxPoints:QUESTIONS.reduce((s,q)=>s+Math.max(...q.options.map(o=>o.points)),0),controls:new Set(),vulns:new Set()};
+      $('#meterNum').text('0%');
+      updateMeter(0);
+      $('#controlsList').empty();$('#vulnsList').empty();$('#summaryText').text('No answers yet. Build your device and learn about the security impact of each decision.');
+      $('.part').addClass('hidden').removeClass('visible');$('#progressFill').css('width','0%');
+      $('#playerName').val('');$('#qcount').text('Question 0 / 10');$('#questionText').text("Welcome to the IoT Product Security Builder! Click 'Start' to begin.");$('#options').empty();
+    }
+
+    function startGame(){
+      resetState();
+      state.idx = 0; renderQuestion();
+    }
+
+    function renderQuestion(){
+      const q = QUESTIONS[state.idx];
+      $('#qcount').text(`Question ${state.idx+1} / ${QUESTIONS.length}`);
+      $('#questionText').text(q.text);
+      const $opts = $('#options').empty();
+      q.options.forEach(opt=>{
+        const $o = $(`<div class='opt' title='Click to select'>${opt.text}</div>`);
+        // hover hint
+        $o.on('mouseenter',()=>{
+          $('#summaryText').text(opt.controls.length?('Will implement: '+opt.controls.join(', ')):'This option adds no explicit security control.');
+        }).on('mouseleave',()=>{ $('#summaryText').text('Tip: choose options to increase your security score and device resilience.');});
+        $o.on('click',()=>{selectOption(opt)});
+        $opts.append($o);
+      });
+    }
+
+    function selectOption(opt){
+      // record answer
+      state.answers.push(opt.key);
+      state.points += opt.points;
+      (opt.controls||[]).forEach(c=>state.controls.add(c));
+      (opt.vulns||[]).forEach(v=>state.vulns.add(v));
+
+      // reveal parts
+      (opt.impactParts||[]).forEach(p=>{ $(`#part-${p}`).addClass('visible').removeClass('hidden');});
+      // progress
+      const prog = Math.round((state.answers.length/QUESTIONS.length)*100);
+      $('#progressFill').css('width',prog+'%');
+      // update lists
+      updateLists(); updateMeter(Math.round((state.points/state.maxPoints)*100));
+
+      // next
+      if(state.idx < QUESTIONS.length-1){ state.idx++; setTimeout(()=>renderQuestion(),400); }
+      else { // finished
+        finalize();
+      }
+    }
+
+    function updateLists(){
+      $('#controlsList').empty();$('#vulnsList').empty();
+      Array.from(state.controls).forEach(c=>{ $('#controlsList').append(`<div class='vuln good'><div>${c}</div><div style='color:var(--good)'>✓</div></div>`); });
+      if(state.vulns.size===0) $('#vulnsList').append(`<div style='color:var(--muted)'>No obvious design vulnerabilities selected so far.</div>`);
+      Array.from(state.vulns).forEach(v=>{ $('#vulnsList').append(`<div class='vuln bad'><div>${v}</div><div style='color:var(--bad)'>!</div></div>`); });
+    }
+
+    function updateMeter(pct){
+      $('#meter').css('background',`conic-gradient(${pct>=75?"var(--good)":(pct>=50?"#f59e0b":"var(--bad)")} 0deg, rgba(11,18,32,0.8) ${pct*3.6}deg)`);
+      $('#meterNum').text(pct+'%');
+    }
+
+    function finalize(){
+      // final analysis — add some descriptive text
+      const pct = Math.round((state.points/state.maxPoints)*100);
+      $('#summaryText').text(`Final security score: ${pct}%. Click Save to record your result or view the Leaderboard.`);
+      updateMeter(pct);
+
+      // identify highest-risk areas from vulns
+      if(state.vulns.size>0){
+        $('#vulnsList').prepend(`<div style='font-weight:700;padding:8px;margin-bottom:6px;border-bottom:1px dashed rgba(255,255,255,0.03)'>High risk issues identified</div>`);
+      }
+
+      // update final device preview and description
+      updateDeviceModel();
+
+      // explain which parts are exploitable based on choices
+      const exploitable = [];
+      if(state.answers.includes('plain_flash')||state.answers.includes('plain_ota')) exploitable.push('Firmware/Key extraction via physical access');
+      if(state.answers.includes('debug_open')) exploitable.push('Local JTAG/Serial debugging leading to root access');
+      if(state.answers.includes('shared_key')||state.answers.includes('default_pwd')) exploitable.push('Mass compromise from leaked credentials');
+      if(state.answers.includes('plain_mqtt')) exploitable.push('Network eavesdropping and command injection');
+      if(exploitable.length>0){ $('#vulnsList').append(`<div style='padding:8px;margin-top:6px;color:var(--muted)'>Possible explitable areas: <ul>${exploitable.map(e=>`<li>${e}</li>`).join('')}</ul></div>`); }
+
+      // final animation
+      $('.part').each(function(i,el){ $(el).addClass('visible'); });
+      $('#progressFill').css('width','100%');
+    }
+
+    // map selections to human-friendly components
+    const COMPONENT_MAP = {
+      'hsm_yes':'HSM', 'hsm_virtual':'TEE', 'flash_enc':'Encrypted Flash', 'plain_flash':'Plain Flash', 'sensor':'Sensor',
+      'wifi':'WiFi Module', 'debug_open':'Debug Header'
+    };
+
+    // update device model live
+    function updateDeviceModel(){
+      // clear badges
+      $('#device .badge').remove();
+      const comps = new Set();
+      // infer from answers
+      state.answers.forEach(a=>{
+        // some keys directly map
+        if(a.includes('hsm')||a==='hsm_yes') comps.add('HSM');
+        if(a.includes('flash')||a==='flash_enc' || a==='plain_flash') comps.add('Storage');
+        if(a.includes('sensor')) comps.add('Sensor');
+        if(a.includes('wifi')||a.includes('mqtt')||a==='dtls' || a==='tls' || a==='vpn') comps.add('Comm Module');
+        if(a.includes('debug')) comps.add('Debug Interface');
+        if(a.includes('signed_ota')||a.includes('ota')) comps.add('OTA Updater');
+      });
+
+      // show badges visually inside device
+      let x=12, y=40;
+      comps.forEach(c=>{
+        const $b = $(`<div class='badge'>${c}</div>`).css({position:'absolute',left:`${x}px`,top:`${y}px`,padding:'4px 8px',background:'rgba(255,255,255,0.04)',borderRadius:'8px',fontSize:'11px',color:'var(--muted)'});
+        $('#device').append($b);
+        x+=80; if(x>240){x=12;y+=28}
+      });
+
+      // populate componentList
+      $('#componentList').empty(); comps.forEach(c=>{ $('#componentList').append(`<div style="padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px">${c}</div>`); });
+
+      // AI-like description generation (simple synthesis)
+      const ctrl = Array.from(state.controls);
+      const vuln = Array.from(state.vulns);
+      let desc = '';
+      if(comps.size===0) desc = 'No components selected yet.';
+      else {
+        desc = `This prototype includes: ${Array.from(comps).join(', ')}.`;
+        if(ctrl.length) desc += ` Implemented security controls include: ${ctrl.slice(0,6).join(', ')}.`;
+        if(vuln.length) desc += ` Potential design vulnerabilities: ${vuln.slice(0,6).join(', ')}.`;
+        // quick remediation tip
+        if(vuln.length) desc += ' Recommended next steps: prioritize fixing high-risk design choices (firmware signing, unique device identities, and disabling debug in production).';
+      }
+      $('#buildDescription').text(desc);
+
+      // add build log entry
+      const time = new Date().toLocaleTimeString();
+      $('#buildLog').prepend(`<div style="padding:6px;border-bottom:1px dashed rgba(255,255,255,0.03)"><strong>${time}</strong> — Updated device: ${Array.from(comps).join(', ') || 'none'}</div>`);
+    }
+
+    // leaderboard functions
+    function saveScore(){
+      const name = ($('#playerName').val()||'Anonymous').trim();
+      const score = Math.round((state.points/state.maxPoints)*100);
+      const record = {name,score:score,date:new Date().toISOString(),answers:state.answers};
+      const data = JSON.parse(localStorage.getItem('iot_builder_leaderboard')||'[]');
+      data.push(record);
+      data.sort((a,b)=>b.score-a.score);
+      localStorage.setItem('iot_builder_leaderboard', JSON.stringify(data.slice(0,50)));
+      alert('Score saved to leaderboard. Open Leaderboard to view.');
+      populateLeader();
+    }
+
+    function populateLeader(){
+      const data = JSON.parse(localStorage.getItem('iot_builder_leaderboard')||'[]');
+      const $tb = $('#leaderTable tbody').empty();
+      data.forEach(r=>{ $tb.append(`<tr><td>${escapeHtml(r.name)}</td><td>${r.score}%</td><td>${(new Date(r.date)).toLocaleString()}</td></tr>`); });
+    }
+
+    // utilities
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v])); }
+
+    // wire UI
+    $(document).ready(function(){
+      resetState(); populateLeader();
+      $('#startBtn').on('click',()=>startGame());
+      $('#explainBtn').on('click',()=>{
+        alert('Scoring rules: Each secure choice awards points. Higher score indicates more security controls in design. Vulnerabilities listed reflect design choices that introduce risk. This is educational only.');
+      });
+      $('#finalizeBtn').on('click',()=>{ if(state.idx>=0) finalize(); else alert('No game in progress. Click Start.'); });
+      $('#saveScore').on('click',()=>saveScore());
+      $('#open-leader').on('click',()=>{ populateLeader(); $('#leaderModal').fadeIn(200); });
+      $('#closeLeader').on('click',()=>$('#leaderModal').fadeOut(200));
+      $('#reset-game').on('click',()=>{ if(confirm('Start a new game? Current progress will be lost.')) startGame(); });
+
+      // small entrance animation for device parts
+      $('.part').each(function(i){ setTimeout(()=>$(this).css({'transform':'translateY(6px)'}),i*40); });
+    });
+  </script>
+</body>
+</html>
