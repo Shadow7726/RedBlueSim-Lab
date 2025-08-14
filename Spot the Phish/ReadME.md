@@ -1,0 +1,86 @@
+
+# 🛡 Secure Development Quiz Game
+
+
+An interactive **Secure Development Questionnaire** game built in HTML/JavaScript.  
+It challenges players with **10 intermediate-level secure coding and software development questions**,  
+while tracking scores, showing clues, and maintaining a **local leaderboard**.
+
+---
+
+## 🎯 Features
+- **User Enrollment** — Enter your name before starting.
+- **Custom Timer** — Choose from 60, 75, 90 seconds or set your own.
+- **Scoreboard System** — Local leaderboard saved in your browser.
+- **Question Clues** — Each question includes a helpful hint.
+- **Review Mode** — See all correct answers after the game.
+- **Professional UI Theme** — Optimized for laptops and touchscreens.
+- **Offline Support** — Works fully offline in a browser.
+
+---
+
+## 📂 File Structure
+```
+
+secure-development-quiz/
+│
+├── index.html   # Main game file (all HTML, CSS, JS in one)
+├── README.md    # This file
+
+````
+
+---
+
+## 🚀 Getting Started
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/<your-username>/secure-development-quiz.git
+cd secure-development-quiz
+````
+
+### 2️⃣ Run the Game
+
+Simply open `index.html` in your browser — no server required.
+
+---
+
+## 📝 How to Play
+
+1. Enter your **name** and select a **timer**.
+2. Answer the 10 secure development questions.
+3. Use clues if needed — but be quick!
+4. Review answers after finishing.
+5. See how you rank on the **leaderboard**.
+
+---
+
+## 💾 Leaderboard Persistence
+
+* The leaderboard is stored **locally** in your browser via `localStorage`.
+* Export, import, or clear scores via the game’s built-in menu.
+
+---
+
+## 🛠 Customization
+
+* To change questions, edit the `questions` array inside `index.html`.
+* You can adjust difficulty or change topics (e.g., OWASP Top 10, cloud security).
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License** — you’re free to modify and distribute.
+
+---
+
+## 🤝 Contributions
+
+Pull requests are welcome.
+If you’d like to add features (e.g., multiplayer, server-based leaderboard), open an issue first.
+
+---
+
+
+
