@@ -1,6 +1,6 @@
 
 # 🕵️ Spot the Phish – Advanced Cybersecurity Game
-
+![Screenshot](images/banner.png)
 An interactive browser-based **phishing email identification game** built entirely with HTML, CSS, and JavaScript.  
 Players are presented with **10 tricky phishing emails** and must identify them correctly before the timer runs out.
 
