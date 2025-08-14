@@ -1,6 +1,4 @@
-Here’s a **professional** `README.md` for your IoT Security Questionnaire Game:
 
----
 
 # IoT Secure Development Questionnaire Game
 
