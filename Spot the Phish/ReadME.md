@@ -1,86 +1,109 @@
 
-# 🛡 Secure Development Quiz Game
+# 🕵️ Spot the Phish – Advanced Cybersecurity Game
 
+An interactive browser-based **phishing email identification game** built entirely with HTML, CSS, and JavaScript.  
+Players are presented with **10 tricky phishing emails** and must identify them correctly before the timer runs out.
 
-An interactive **Secure Development Questionnaire** game built in HTML/JavaScript.  
-It challenges players with **10 intermediate-level secure coding and software development questions**,  
-while tracking scores, showing clues, and maintaining a **local leaderboard**.
-
----
-
-## 🎯 Features
-- **User Enrollment** — Enter your name before starting.
-- **Custom Timer** — Choose from 60, 75, 90 seconds or set your own.
-- **Scoreboard System** — Local leaderboard saved in your browser.
-- **Question Clues** — Each question includes a helpful hint.
-- **Review Mode** — See all correct answers after the game.
-- **Professional UI Theme** — Optimized for laptops and touchscreens.
-- **Offline Support** — Works fully offline in a browser.
+This game includes:
+- **User enrollment system**
+- **Persistent leaderboard** (saved locally in the browser, with export/import options)
+- **Customizable timer**
+- **Clues for each question**
+- **Detailed review screen** explaining why each email is phishing
+- **Professional cyber-awareness theme**
 
 ---
 
-## 📂 File Structure
+## 🎯 How to Play
+
+1. **Open the `index.html` file** in your browser (no installation required).
+2. Enter your **name** to start.
+3. Choose a **timer** (60, 75, 90 seconds, or custom).
+4. Read each email carefully and **decide if it’s phishing**.
+5. For each correct answer: **+1 point**  
+   For each wrong answer: **-1 point**
+6. Review your mistakes at the end to learn **red flags**.
+7. Compete for the **top spot** on the leaderboard!
+
+---
+
+## 🛠 Features
+
+- 🎮 **No server needed** – runs completely offline
+- 📋 **Persistent leaderboard** stored in browser `localStorage`
+- 🧠 **Clue system** for hints during the game
+- 🕒 **Multiple timer settings**
+- 📤 **Export / Import leaderboard** (JSON format)
+- 📱 Fully responsive – works on desktop and mobile
+- 🎨 Professional cybersecurity theme
+
+---
+
+## 📂 Project Structure
+
 ```
 
-secure-development-quiz/
+📁 spot-the-phish/
 │
-├── index.html   # Main game file (all HTML, CSS, JS in one)
-├── README.md    # This file
+├── index.html       # Main game file
+├── style.css        # Game styling
+├── script.js        # Game logic
+├── README.md        # Project documentation
+└── assets/          # (Optional) Images, icons, etc.
 
 ````
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Running Locally
 
-### 1️⃣ Clone the Repository
+Simply **download** or **clone** the repository and open `index.html` in your web browser:
+
 ```bash
-git clone https://github.com/<your-username>/secure-development-quiz.git
-cd secure-development-quiz
+git clone https://github.com/yourusername/spot-the-phish.git
+cd spot-the-phish
 ````
 
-### 2️⃣ Run the Game
+Then open:
 
-Simply open `index.html` in your browser — no server required.
+```
+index.html
+```
 
----
-
-## 📝 How to Play
-
-1. Enter your **name** and select a **timer**.
-2. Answer the 10 secure development questions.
-3. Use clues if needed — but be quick!
-4. Review answers after finishing.
-5. See how you rank on the **leaderboard**.
+in Chrome, Firefox, Edge, or Safari.
 
 ---
 
-## 💾 Leaderboard Persistence
+## 🏆 Leaderboard System
 
-* The leaderboard is stored **locally** in your browser via `localStorage`.
-* Export, import, or clear scores via the game’s built-in menu.
+* Player scores are saved in **localStorage** (persistent even after browser close).
+* You can **export** the leaderboard to a `.json` file.
+* You can **import** a leaderboard file to restore or share scores.
+* You can **clear** the leaderboard anytime.
 
 ---
 
-## 🛠 Customization
+## 📸 Screenshots
 
-* To change questions, edit the `questions` array inside `index.html`.
-* You can adjust difficulty or change topics (e.g., OWASP Top 10, cloud security).
+> *(Add your screenshots here)*
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — you’re free to modify and distribute.
+This project is licensed under the **MIT License** – feel free to use, modify, and share.
 
 ---
 
-## 🤝 Contributions
+## 💡 Educational Use
 
-Pull requests are welcome.
-If you’d like to add features (e.g., multiplayer, server-based leaderboard), open an issue first.
+This game is designed for:
+
+* Security awareness training sessions
+* Corporate cybersecurity workshops
+* School/college cyber literacy programs
+
+It is **not** intended for actual phishing attacks but for **educational simulation purposes** only.
 
 ---
-
-
 
