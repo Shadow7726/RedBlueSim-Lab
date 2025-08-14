@@ -1,7 +1,7 @@
 
 
 # IoT Secure Development Questionnaire Game
-
+![Screenshot](images/banner.png)
 ## Overview
 
 The IoT Secure Development Questionnaire Game is an interactive web-based tool designed to evaluate and enhance awareness of secure product development practices for IoT devices. The game presents a series of security-related questions covering critical areas in embedded systems, firmware, and network security. Players select answers to score points, and their performance is tracked for continuous improvement.
